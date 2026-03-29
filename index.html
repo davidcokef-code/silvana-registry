@@ -168,6 +168,8 @@
   }
   .cbtn:hover { border-color: var(--pink); color: var(--pink-dk); }
   .cbtn.taken { background: var(--sage-lt); border-color: var(--sage); color: #3b6d50; cursor: default; }
+  .unclaim-btn { background: var(--sage-lt); border-color: var(--sage); color: #3b6d50; }
+  .unclaim-btn:hover { background: #FCEBEB; border-color: #f09595; color: #a32d2d; }
   .claimed-by { font-size: 12px; color: #3b6d50; margin-top: 6px; font-weight: 300; }
 
   /* ── ADMIN PANEL ── */
@@ -389,6 +391,18 @@
   </div>
 </div>
 
+<!-- UNCLAIM MODAL -->
+<div class="modal-wrap" id="unclaimModal">
+  <div class="modal">
+    <h3>¿Liberar este regalo?</h3>
+    <p>Vas a liberar <strong id="unclaim-gift-name"></strong> para que otro invitado pueda tomarlo.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeUnclaim()">Cancelar</button>
+      <button class="btn-confirm" id="btn-unclaim-confirm" onclick="confirmUnclaim()">Sí, liberar regalo</button>
+    </div>
+  </div>
+</div>
+
 <!-- AUTH MODAL -->
 <div class="modal-wrap" id="authModal">
   <div class="modal auth-modal">
@@ -455,7 +469,7 @@ function renderGrid() {
       <div class="cfoot">
         <span class="price">${g.price_range || ''}</span>
         ${taken
-          ? `<span class="cbtn taken">✓ Reservado</span>`
+          ? `<button class="cbtn unclaim-btn" onclick="openUnclaim(${g.id})">✓ Reservado — liberar</button>`
           : `<button class="cbtn" onclick="openClaim(${g.id})">Quiero darlo</button>`}
       </div>
       ${g.claimed_by && isAdmin ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
@@ -607,6 +621,30 @@ function openClaim(id) {
 function closeModal() {
   document.getElementById('claimModal').classList.remove('open');
   pendingId = null;
+}
+
+function openUnclaim(id) {
+  pendingId = id;
+  const g = gifts.find(x => x.id === id);
+  document.getElementById('unclaim-gift-name').textContent = g.name;
+  document.getElementById('unclaimModal').classList.add('open');
+}
+
+function closeUnclaim() {
+  document.getElementById('unclaimModal').classList.remove('open');
+  pendingId = null;
+}
+
+async function confirmUnclaim() {
+  const btn = document.getElementById('btn-unclaim-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Liberando...';
+  const { error } = await db.from('gifts').update({ claimed_by: null }).eq('id', pendingId);
+  btn.disabled = false;
+  btn.textContent = 'Sí, liberar regalo';
+  if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
+  closeUnclaim();
+  await loadGifts();
 }
 
 async function confirmClaim() {
