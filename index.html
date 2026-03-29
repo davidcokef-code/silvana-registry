@@ -227,11 +227,15 @@
   .admin-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
+    align-items: flex-start;
+    padding: 8px 4px;
     border-bottom: 1px solid var(--border);
     gap: 8px;
+    border-radius: 8px;
+    transition: background .15s;
   }
+  .admin-item.drag-over { background: var(--sage-lt); border: 1px dashed var(--sage); }
+  .admin-item.dragging { opacity: 0.4; }
   .admin-item-name { font-size: 14px; color: var(--ink); }
   .btn-del {
     font-size: 12px;
@@ -464,15 +468,12 @@ function renderGrid() {
 function renderAdminList() {
   const el = document.getElementById('adminList');
   if (!gifts.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Regalos registrados (${gifts.length}) — haz clic en uno para editarlo</p>` +
+  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Regalos registrados (${gifts.length}) — arrastra ⠿ para reordenar</p>` +
     gifts.map(g => `
-      <div class="admin-item" id="aitem-${g.id}">
+      <div class="admin-item" id="aitem-${g.id}" data-id="${g.id}">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-              <button onclick="moveGift(${g.id},'up')" title="Subir" style="font-size:11px;padding:2px 7px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;line-height:1;">↑</button>
-              <button onclick="moveGift(${g.id},'down')" title="Bajar" style="font-size:11px;padding:2px 7px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;line-height:1;">↓</button>
-            </div>
+            <div class="drag-handle" title="Arrastrar para reordenar" style="flex-shrink:0;cursor:grab;padding:4px 6px;color:var(--muted);font-size:16px;line-height:1;user-select:none;">⠿</div>
             <span class="admin-item-name">${g.name}${g.claimed_by ? ' ✓' : ''}</span>
             <button onclick="toggleEdit(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;">Editar</button>
             <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
@@ -519,6 +520,46 @@ function renderAdminList() {
           </div>
         </div>
       </div>`).join('');
+  setTimeout(initDragDrop, 0);
+}
+
+function initDragDrop() {
+  const items = document.querySelectorAll('#adminList .admin-item');
+  let dragSrcId = null;
+  items.forEach(item => {
+    const handle = item.querySelector('.drag-handle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', () => { item.draggable = true; });
+    item.addEventListener('dragstart', e => {
+      dragSrcId = parseInt(item.dataset.id);
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.draggable = false;
+      item.classList.remove('dragging');
+      document.querySelectorAll('.admin-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.admin-item').forEach(i => i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', async e => {
+      e.preventDefault();
+      const targetId = parseInt(item.dataset.id);
+      if (dragSrcId === targetId) return;
+      item.classList.remove('drag-over');
+      const ids = Array.from(document.querySelectorAll('#adminList .admin-item')).map(i => parseInt(i.dataset.id));
+      const fromIdx = ids.indexOf(dragSrcId);
+      const toIdx = ids.indexOf(targetId);
+      ids.splice(fromIdx, 1);
+      ids.splice(toIdx, 0, dragSrcId);
+      await Promise.all(ids.map((id, i) => db.from('gifts').update({ sort_order: i }).eq('id', id)));
+      await loadGifts();
+    });
+  });
 }
 
 function toggleEdit(id) {
@@ -602,22 +643,6 @@ async function addGift() {
   btn.textContent = '+ Agregar regalo';
   if (error) { alert('Error al guardar: ' + error.message); return; }
   ['f-name','f-desc','f-price','f-link','f-image'].forEach(id => document.getElementById(id).value = '');
-  await loadGifts();
-}
-
-async function moveGift(id, direction) {
-  const idx = gifts.findIndex(g => g.id === id);
-  if (direction === 'up' && idx === 0) return;
-  if (direction === 'down' && idx === gifts.length - 1) return;
-  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-  const a = gifts[idx];
-  const b = gifts[swapIdx];
-  const aOrder = a.sort_order ?? idx;
-  const bOrder = b.sort_order ?? swapIdx;
-  await Promise.all([
-    db.from('gifts').update({ sort_order: bOrder }).eq('id', a.id),
-    db.from('gifts').update({ sort_order: aOrder }).eq('id', b.id),
-  ]);
   await loadGifts();
 }
 
