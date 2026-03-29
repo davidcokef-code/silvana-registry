@@ -388,6 +388,19 @@
   <button class="btn-add" id="btnAdd" onclick="addGift()">+ Agregar regalo</button>
 
   <div class="admin-list" id="adminList"></div>
+
+  <div style="margin-top:2rem;border-top:1px solid var(--border);padding-top:1.25rem;">
+    <p style="font-family:'Comfortaa',cursive;font-size:16px;font-weight:500;color:var(--ink);margin-bottom:1rem;">Confirmaciones RSVP</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;" id="rsvp-filter-btns">
+      <button onclick="filterRSVP('all',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--pink-dk);border-radius:20px;background:var(--pink-dk);color:white;cursor:pointer;font-family:'Nunito',sans-serif;">Todos</button>
+      <button onclick="filterRSVP('amigos-david',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;">Amigos David</button>
+      <button onclick="filterRSVP('familia-fernandez',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;">Familia Fernández</button>
+      <button onclick="filterRSVP('gla',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;">GLA</button>
+      <button onclick="filterRSVP('familia-garzon-rubio',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;">Garzón & Rubio</button>
+      <button onclick="filterRSVP('amigos-xime',this)" style="font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;">Amigos Xime</button>
+    </div>
+    <div id="rsvp-list" style="font-size:13px;color:var(--muted);">Cargando...</div>
+  </div>
 </div>
 
 <div id="grid" class="grid"><div class="loading">Cargando lista...</div></div>
@@ -457,6 +470,43 @@ let pendingId = null;
 let isAdmin = false;
 
 const catLabel = { essential:'Esencial', hygiene:'Aseo', fun:'Juguetes', clothing:'Ropa' };
+
+let allRSVPs = [];
+let rsvpFilter = 'all';
+
+async function loadRSVPs() {
+  const { data } = await db.from('rsvps').select('*').order('created_at', { ascending: false });
+  allRSVPs = data || [];
+  renderRSVPs();
+}
+
+function renderRSVPs() {
+  const el = document.getElementById('rsvp-list');
+  if (!el) return;
+  const filtered = rsvpFilter === 'all' ? allRSVPs : allRSVPs.filter(r => r.shower_slug === rsvpFilter);
+  if (!filtered.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;">Sin confirmaciones aún.</p>'; return; }
+  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:8px;">${filtered.length} confirmación${filtered.length !== 1 ? 'es' : ''}</p>` +
+    filtered.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">${r.name}</div>
+        <div style="font-size:12px;color:var(--muted);">${r.shower_name} · ${new Date(r.created_at).toLocaleDateString('es-CO', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      ${r.phone ? `<a href="https://wa.me/${r.phone.replace('+','')}" target="_blank" style="font-size:12px;color:var(--pink-dk);text-decoration:none;white-space:nowrap;">WhatsApp →</a>` : ''}
+    </div>`).join('');
+}
+
+function filterRSVP(slug, btn) {
+  rsvpFilter = slug;
+  document.querySelectorAll('#rsvp-filter-btns button').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--muted)';
+    b.style.borderColor = 'var(--border)';
+  });
+  btn.style.background = 'var(--pink-dk)';
+  btn.style.color = 'white';
+  btn.style.borderColor = 'var(--pink-dk)';
+  renderRSVPs();
+}
 
 async function loadGifts() {
   const { data, error } = await db.from('gifts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
@@ -798,6 +848,7 @@ function toggleAdmin() {
     panel.classList.toggle('open');
     btn.classList.toggle('active');
     renderGrid();
+    if (panel.classList.contains('open')) loadRSVPs();
   }
 }
 
