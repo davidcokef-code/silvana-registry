@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de regalos — Silvana 🎀</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --pink:     #e8a0b4;
+    --pink-lt:  #fdf0f4;
+    --pink-dk:  #b5607a;
+    --sage:     #a8c5b5;
+    --sage-lt:  #f0f5f2;
+    --cream:    #faf7f2;
+    --ink:      #2a2320;
+    --muted:    #8a7e7a;
+    --border:   rgba(42,35,32,0.1);
+    --radius:   16px;
+    --shadow:   0 2px 16px rgba(42,35,32,0.07);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--pink-lt);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 1rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+  .site-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    color: var(--pink-dk);
+    line-height: 1.1;
+  }
+  .site-header h1 em { font-style: italic; color: var(--ink); }
+  .site-header p {
+    font-size: 15px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-weight: 300;
+  }
+  .admin-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: white;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .admin-toggle:hover { border-color: var(--pink); color: var(--pink-dk); }
+  .admin-toggle.active { background: var(--pink-dk); color: white; border-color: var(--pink-dk); }
+
+  /* ── STATS ── */
+  .stats {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 1.5rem 1rem 0;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .stat {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.5rem;
+    text-align: center;
+    min-width: 110px;
+  }
+  .stat-num { font-size: 26px; font-weight: 500; color: var(--ink); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── FILTERS ── */
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 1.25rem 1rem 0;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .fbtn {
+    font-size: 13px;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: white;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .fbtn:hover { border-color: var(--pink); color: var(--pink-dk); }
+  .fbtn.on { background: var(--pink-dk); color: white; border-color: var(--pink-dk); }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 14px;
+    padding: 1.25rem 1rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    transition: box-shadow .2s, opacity .2s;
+  }
+  .card:hover { box-shadow: var(--shadow); }
+  .card.done { opacity: .55; }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .cname { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .b-essential { background: #EEEDFE; color: #3C3489; }
+  .b-comfort   { background: #E1F5EE; color: #085041; }
+  .b-fun       { background: #FAEEDA; color: #633806; }
+  .b-clothing  { background: var(--pink-lt); color: var(--pink-dk); }
+  .cdesc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.55;
+    font-weight: 300;
+  }
+  .cfoot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .price { font-size: 13px; color: var(--muted); }
+  .cbtn {
+    font-size: 13px;
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    transition: all .15s;
+  }
+  .cbtn:hover { border-color: var(--pink); color: var(--pink-dk); }
+  .cbtn.taken { background: var(--sage-lt); border-color: var(--sage); color: #3b6d50; cursor: default; }
+  .claimed-by { font-size: 12px; color: #3b6d50; margin-top: 6px; font-weight: 300; }
+
+  /* ── ADMIN PANEL ── */
+  .admin-panel {
+    display: none;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 1.25rem 1rem 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .admin-panel.open { display: block; }
+  .admin-panel h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 1rem;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--pink);
+  }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+  .btn-add {
+    width: 100%;
+    padding: 10px;
+    background: var(--pink-dk);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity .15s;
+  }
+  .btn-add:hover { opacity: .85; }
+  .btn-add:disabled { opacity: .5; cursor: default; }
+  .admin-list { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .admin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .admin-item-name { font-size: 14px; color: var(--ink); }
+  .btn-del {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 1px solid #f09595;
+    border-radius: 8px;
+    background: transparent;
+    color: #a32d2d;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-del:hover { background: #FCEBEB; }
+
+  /* ── MODAL ── */
+  .modal-wrap {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(42,35,32,0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+  .modal-wrap.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    width: 100%;
+    max-width: 360px;
+  }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; font-weight: 300; }
+  .modal input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .modal input:focus { border-color: var(--pink); }
+  .modal-btns { display: flex; gap: 10px; }
+  .btn-cancel {
+    flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 10px;
+    background: transparent; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+  }
+  .btn-confirm {
+    flex: 1; padding: 10px; border: none; border-radius: 10px;
+    background: var(--pink-dk); color: white; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; transition: opacity .15s;
+  }
+  .btn-confirm:hover { opacity: .85; }
+
+  /* ── AUTH MODAL ── */
+  .auth-modal { max-width: 320px; }
+  .auth-error { font-size: 13px; color: #a32d2d; margin-top: -6px; margin-bottom: 8px; display: none; }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 4rem; color: var(--muted); font-size: 15px; }
+  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Lista de regalos<br><em>Silvana</em> 🎀</h1>
+  <p>Selecciona un regalo y ponle tu nombre para reservarlo.</p>
+  <button class="admin-toggle" id="adminToggle" onclick="openAuthModal()">Admin</button>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="s-total">—</div><div class="stat-label">Total regalos</div></div>
+  <div class="stat"><div class="stat-num" id="s-avail">—</div><div class="stat-label">Disponibles</div></div>
+  <div class="stat"><div class="stat-num" id="s-taken">—</div><div class="stat-label">Reservados</div></div>
+</div>
+
+<div class="filters" id="filters">
+  <button class="fbtn on" onclick="setFilter('all',this)">Todos</button>
+  <button class="fbtn" onclick="setFilter('essential',this)">Esencial</button>
+  <button class="fbtn" onclick="setFilter('comfort',this)">Confort</button>
+  <button class="fbtn" onclick="setFilter('clothing',this)">Ropa</button>
+  <button class="fbtn" onclick="setFilter('fun',this)">Entretenimiento</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+  <h2>Agregar regalo</h2>
+  <div class="form-row">
+    <div>
+      <label>Nombre del regalo *</label>
+      <input type="text" id="f-name" placeholder="Ej: Cuna portátil" />
+    </div>
+    <div>
+      <label>Categoría *</label>
+      <select id="f-cat">
+        <option value="essential">Esencial</option>
+        <option value="comfort">Confort</option>
+        <option value="clothing">Ropa</option>
+        <option value="fun">Entretenimiento</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row full">
+    <div>
+      <label>Descripción</label>
+      <textarea id="f-desc" placeholder="Detalles del regalo..."></textarea>
+    </div>
+  </div>
+  <div class="form-row">
+    <div>
+      <label>Rango de precio</label>
+      <input type="text" id="f-price" placeholder="Ej: $200k–$400k" />
+    </div>
+    <div>
+      <label>Link de referencia</label>
+      <input type="text" id="f-link" placeholder="https://..." />
+    </div>
+  </div>
+  <button class="btn-add" id="btnAdd" onclick="addGift()">+ Agregar regalo</button>
+
+  <div class="admin-list" id="adminList"></div>
+</div>
+
+<div id="grid" class="grid"><div class="loading">Cargando lista...</div></div>
+
+<!-- CLAIM MODAL -->
+<div class="modal-wrap" id="claimModal">
+  <div class="modal">
+    <h3 id="modal-title">Reservar regalo</h3>
+    <p id="modal-desc">¿Con qué nombre quieres reservar este regalo?</p>
+    <input type="text" id="modal-name" placeholder="Tu nombre completo" maxlength="60" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmClaim()">Reservar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-wrap" id="authModal">
+  <div class="modal auth-modal">
+    <h3>Modo admin</h3>
+    <p>Ingresa la contraseña para administrar los regalos.</p>
+    <input type="password" id="auth-pw" placeholder="Contraseña" />
+    <p class="auth-error" id="auth-error">Contraseña incorrecta.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAuth()">Cancelar</button>
+      <button class="btn-confirm" onclick="checkAuth()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'REEMPLAZA_CON_TU_SUPABASE_URL';
+const SUPABASE_KEY = 'REEMPLAZA_CON_TU_SUPABASE_ANON_KEY';
+const ADMIN_PASSWORD = 'CAMBIA_ESTA_CONTRASENA';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let gifts = [];
+let currentFilter = 'all';
+let pendingId = null;
+let isAdmin = false;
+
+const catLabel = { essential:'Esencial', comfort:'Confort', fun:'Entretenimiento', clothing:'Ropa' };
+
+async function loadGifts() {
+  const { data, error } = await db.from('gifts').select('*').order('created_at', { ascending: true });
+  if (error) { console.error(error); return; }
+  gifts = data || [];
+  renderGrid();
+  renderAdminList();
+  updateStats();
+}
+
+function updateStats() {
+  const total = gifts.length;
+  const taken = gifts.filter(g => g.claimed_by).length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-taken').textContent = taken;
+  document.getElementById('s-avail').textContent = total - taken;
+}
+
+function renderGrid() {
+  const el = document.getElementById('grid');
+  const filtered = currentFilter === 'all' ? gifts : gifts.filter(g => g.category === currentFilter);
+  if (!filtered.length) { el.innerHTML = '<div class="empty">No hay regalos en esta categoría aún.</div>'; return; }
+  el.innerHTML = filtered.map(g => {
+    const taken = !!g.claimed_by;
+    return `<div class="card ${taken ? 'done' : ''}" id="card-${g.id}">
+      <div class="card-top">
+        <div class="cname">${g.name}</div>
+        <span class="badge b-${g.category}">${catLabel[g.category]}</span>
+      </div>
+      <div class="cdesc">${g.description || ''}</div>
+      <div class="cfoot">
+        <span class="price">${g.price_range || ''}</span>
+        ${taken
+          ? `<span class="cbtn taken">✓ Reservado</span>`
+          : `<button class="cbtn" onclick="openClaim(${g.id})">Quiero darlo</button>`}
+      </div>
+      ${g.claimed_by ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
+      ${g.link ? `<div style="margin-top:6px"><a href="${g.link}" target="_blank" style="font-size:12px;color:var(--pink-dk);text-decoration:none;">Ver referencia →</a></div>` : ''}
+      ${isAdmin && !taken ? `<button class="btn-del" style="margin-top:8px;width:100%;" onclick="deleteGift(${g.id})">Eliminar</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderAdminList() {
+  const el = document.getElementById('adminList');
+  if (!gifts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Regalos registrados (${gifts.length})</p>` +
+    gifts.map(g => `<div class="admin-item">
+      <span class="admin-item-name">${g.name} ${g.claimed_by ? '✓' : ''}</span>
+      <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
+    </div>`).join('');
+}
+
+function setFilter(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderGrid();
+}
+
+function openClaim(id) {
+  pendingId = id;
+  const g = gifts.find(x => x.id === id);
+  document.getElementById('modal-title').textContent = g.name;
+  document.getElementById('modal-name').value = '';
+  document.getElementById('claimModal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-name').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('claimModal').classList.remove('open');
+  pendingId = null;
+}
+
+async function confirmClaim() {
+  const name = document.getElementById('modal-name').value.trim();
+  if (!name) { document.getElementById('modal-name').style.borderColor = '#e24b4a'; return; }
+  const btn = document.querySelector('.btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const { error } = await db.from('gifts').update({ claimed_by: name }).eq('id', pendingId).is('claimed_by', null);
+  btn.disabled = false;
+  btn.textContent = 'Reservar ✓';
+  if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
+  closeModal();
+  await loadGifts();
+}
+
+async function addGift() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').style.borderColor = '#e24b4a'; return; }
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const { error } = await db.from('gifts').insert({
+    name,
+    category: document.getElementById('f-cat').value,
+    description: document.getElementById('f-desc').value.trim(),
+    price_range: document.getElementById('f-price').value.trim(),
+    link: document.getElementById('f-link').value.trim() || null,
+  });
+  btn.disabled = false;
+  btn.textContent = '+ Agregar regalo';
+  if (error) { alert('Error al guardar: ' + error.message); return; }
+  ['f-name','f-desc','f-price','f-link'].forEach(id => document.getElementById(id).value = '');
+  await loadGifts();
+}
+
+async function deleteGift(id) {
+  if (!confirm('¿Eliminar este regalo?')) return;
+  await db.from('gifts').delete().eq('id', id);
+  await loadGifts();
+}
+
+function openAuthModal() {
+  if (isAdmin) { toggleAdmin(); return; }
+  document.getElementById('auth-pw').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('authModal').classList.add('open');
+  setTimeout(() => document.getElementById('auth-pw').focus(), 100);
+}
+
+function closeAuth() { document.getElementById('authModal').classList.remove('open'); }
+
+function checkAuth() {
+  const pw = document.getElementById('auth-pw').value;
+  if (pw === ADMIN_PASSWORD) {
+    closeAuth();
+    isAdmin = true;
+    toggleAdmin();
+  } else {
+    document.getElementById('auth-error').style.display = 'block';
+  }
+}
+
+function toggleAdmin() {
+  const panel = document.getElementById('adminPanel');
+  const btn = document.getElementById('adminToggle');
+  if (isAdmin) {
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+    renderGrid();
+  }
+}
+
+document.getElementById('modal-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmClaim(); });
+document.getElementById('auth-pw').addEventListener('keydown', e => { if (e.key === 'Enter') checkAuth(); });
+
+const channel = db.channel('gifts-realtime')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'gifts' }, () => loadGifts())
+  .subscribe();
+
+loadGifts();
+</script>
+</body>
+</html>
