@@ -322,6 +322,7 @@
   <button class="fbtn" onclick="setFilter('comfort',this)">Confort</button>
   <button class="fbtn" onclick="setFilter('clothing',this)">Ropa</button>
   <button class="fbtn" onclick="setFilter('fun',this)">Entretenimiento</button>
+  <button class="fbtn" onclick="setFilter('claimed',this)">✓ Reservados</button>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -354,8 +355,14 @@
       <input type="text" id="f-price" placeholder="Ej: $200k–$400k" />
     </div>
     <div>
-      <label>Link de referencia</label>
+      <label>Link del producto</label>
       <input type="text" id="f-link" placeholder="https://..." />
+    </div>
+  </div>
+  <div class="form-row full">
+    <div>
+      <label>URL de imagen (clic derecho → "Copiar dirección de imagen")</label>
+      <input type="text" id="f-image" placeholder="https://...jpg" />
     </div>
   </div>
   <button class="btn-add" id="btnAdd" onclick="addGift()">+ Agregar regalo</button>
@@ -426,11 +433,16 @@ function updateStats() {
 
 function renderGrid() {
   const el = document.getElementById('grid');
-  const filtered = currentFilter === 'all' ? gifts : gifts.filter(g => g.category === currentFilter);
+  const filtered = currentFilter === 'all' ? gifts
+    : currentFilter === 'claimed' ? gifts.filter(g => !!g.claimed_by)
+    : gifts.filter(g => g.category === currentFilter);
   if (!filtered.length) { el.innerHTML = '<div class="empty">No hay regalos en esta categoría aún.</div>'; return; }
   el.innerHTML = filtered.map(g => {
     const taken = !!g.claimed_by;
     return `<div class="card ${taken ? 'done' : ''}" id="card-${g.id}">
+      ${g.image_url ? `<div style="width:100%;height:160px;overflow:hidden;border-radius:10px;margin-bottom:10px;background:var(--sage-lt);">
+        <img src="${g.image_url}" alt="${g.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.display='none'" />
+      </div>` : ''}
       <div class="card-top">
         <div class="cname">${g.name}</div>
         <span class="badge b-${g.category}">${catLabel[g.category]}</span>
@@ -482,7 +494,7 @@ function renderAdminList() {
               <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Descripción</label>
               <textarea id="e-desc-${g.id}" rows="2" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;resize:vertical;">${g.description||''}</textarea>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
               <div>
                 <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Precio</label>
                 <input id="e-price-${g.id}" value="${(g.price_range||'').replace(/"/g,'&quot;')}" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
@@ -491,6 +503,10 @@ function renderAdminList() {
                 <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Link del producto</label>
                 <input id="e-link-${g.id}" value="${(g.link||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
               </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">URL de imagen (clic derecho → "Copiar dirección de imagen")</label>
+              <input id="e-image-${g.id}" value="${(g.image_url||'').replace(/"/g,'&quot;')}" placeholder="https://...jpg" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
             </div>
             <div style="display:flex;gap:8px;">
               <button onclick="saveEdit(${g.id})" style="flex:1;padding:7px;background:var(--pink-dk);color:white;border:none;border-radius:8px;font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;">Guardar cambios</button>
@@ -515,6 +531,7 @@ async function saveEdit(id) {
     description: document.getElementById(`e-desc-${id}`).value.trim(),
     price_range: document.getElementById(`e-price-${id}`).value.trim(),
     link: document.getElementById(`e-link-${id}`).value.trim() || null,
+    image_url: document.getElementById(`e-image-${id}`).value.trim() || null,
   }).eq('id', id);
   if (error) { alert('Error al guardar: ' + error.message); return; }
   await loadGifts();
@@ -559,6 +576,7 @@ async function confirmClaim() {
   if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
   closeModal();
   await loadGifts();
+  setFilter('claimed', document.querySelector('.fbtn[onclick="setFilter('claimed',this)"]'));
 }
 
 async function addGift() {
@@ -573,11 +591,12 @@ async function addGift() {
     description: document.getElementById('f-desc').value.trim(),
     price_range: document.getElementById('f-price').value.trim(),
     link: document.getElementById('f-link').value.trim() || null,
+    image_url: document.getElementById('f-image').value.trim() || null,
   });
   btn.disabled = false;
   btn.textContent = '+ Agregar regalo';
   if (error) { alert('Error al guardar: ' + error.message); return; }
-  ['f-name','f-desc','f-price','f-link'].forEach(id => document.getElementById(id).value = '');
+  ['f-name','f-desc','f-price','f-link','f-image'].forEach(id => document.getElementById(id).value = '');
   await loadGifts();
 }
 
