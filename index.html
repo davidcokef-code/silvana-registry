@@ -443,7 +443,7 @@ function renderGrid() {
           : `<button class="cbtn" onclick="openClaim(${g.id})">Quiero darlo</button>`}
       </div>
       ${g.claimed_by && isAdmin ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
-      ${g.link ? `<div style="margin-top:6px"><a href="${g.link}" target="_blank" style="font-size:12px;color:var(--pink-dk);text-decoration:none;">Ver referencia →</a></div>` : ''}
+      ${g.link ? `<div style="margin-top:10px"><a href="${g.link}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:'Nunito',sans-serif;color:var(--pink-dk);text-decoration:none;border:1px solid var(--sage);padding:5px 12px;border-radius:8px;background:var(--sage-lt);">Ver producto →</a></div>` : ''}
       ${isAdmin && !taken ? `<button class="btn-del" style="margin-top:8px;width:100%;" onclick="deleteGift(${g.id})">Eliminar</button>` : ''}
     </div>`;
   }).join('');
