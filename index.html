@@ -316,6 +316,9 @@
   /* ── LOADING ── */
   .loading { text-align: center; padding: 4rem; color: var(--muted); font-size: 15px; }
   .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+  .cd-box { background: white; border: 1px solid var(--border); border-radius: var(--border-radius-md); padding: 10px 16px; text-align: center; min-width: 64px; }
+  .cd-num { font-family: 'Comfortaa', cursive; font-size: 26px; font-weight: 700; color: var(--pink-dk); line-height: 1; }
+  .cd-label { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 1px; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -324,6 +327,7 @@
   <h1>Bienvenidos al baby shower de<br><em>Silvana Coke Garzón</em> 🌿</h1>
   <p>Selecciona un regalo y resérvalo a tu nombre.</p>
   <button class="admin-toggle" id="adminToggle" onclick="openAuthModal()">Admin</button>
+  <div id="countdown" style="display:flex;justify-content:center;gap:16px;margin-top:1.25rem;flex-wrap:wrap;"></div>
 </header>
 
 <div class="stats">
@@ -692,6 +696,12 @@ async function confirmRequestRelease() {
   btn.disabled = false;
   btn.textContent = 'Sí, solicitar';
   if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
+  const g = gifts.find(x => x.id === pendingId);
+  fetch(`${SUPABASE_URL}/functions/v1/notify-gift`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    body: JSON.stringify({ type: 'release_requested', giftName: g.name, personName: g.claimed_by })
+  }).catch(() => {});
   closeReleaseModal();
   await loadGifts();
 }
@@ -721,6 +731,12 @@ async function confirmClaim() {
   btn.disabled = false;
   btn.textContent = 'Reservar ✓';
   if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
+  const g = gifts.find(x => x.id === pendingId);
+  fetch(`${SUPABASE_URL}/functions/v1/notify-gift`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    body: JSON.stringify({ type: 'claimed', giftName: g.name, personName: name })
+  }).catch(() => {});
   closeModal();
   await loadGifts();
   const claimedBtn = Array.from(document.querySelectorAll('.fbtn')).find(b => b.textContent.includes('Reservados'));
@@ -787,6 +803,28 @@ function toggleAdmin() {
 
 document.getElementById('modal-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmClaim(); });
 document.getElementById('auth-pw').addEventListener('keydown', e => { if (e.key === 'Enter') checkAuth(); });
+
+function updateCountdown() {
+  const target = new Date('2026-08-21T00:00:00');
+  const now = new Date();
+  const diff = target - now;
+  if (diff <= 0) {
+    document.getElementById('countdown').innerHTML = '<div style="font-family:Comfortaa,cursive;font-size:18px;color:var(--pink-dk);">¡Silvana ya llegó! 🌿</div>';
+    return;
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const secs = Math.floor((diff % (1000 * 60)) / 1000);
+  document.getElementById('countdown').innerHTML = [
+    [days, 'días'],
+    [hours, 'horas'],
+    [mins, 'min'],
+    [secs, 'seg']
+  ].map(([n, l]) => `<div class="cd-box"><div class="cd-num">${String(n).padStart(2,'0')}</div><div class="cd-label">${l}</div></div>`).join('');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
 
 const channel = db.channel('gifts-realtime')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'gifts' }, () => loadGifts())
