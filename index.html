@@ -401,6 +401,18 @@
   </div>
 </div>
 
+<!-- RELEASE REQUEST MODAL -->
+<div class="modal-wrap" id="releaseModal">
+  <div class="modal">
+    <h3>Solicitar liberación</h3>
+    <p>Le avisaremos a los organizadores que quieres liberar <strong id="release-gift-name"></strong>. Ellos confirmarán la liberación.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeReleaseModal()">Cancelar</button>
+      <button class="btn-confirm" id="btn-release-confirm" onclick="confirmRequestRelease()">Sí, solicitar</button>
+    </div>
+  </div>
+</div>
+
 <!-- UNCLAIM MODAL -->
 <div class="modal-wrap" id="unclaimModal">
   <div class="modal">
@@ -479,7 +491,9 @@ function renderGrid() {
       <div class="cfoot">
         <span class="price">${g.price_range || ''}</span>
         ${taken
-          ? `<button class="cbtn unclaim-btn" onclick="openUnclaim(${g.id})">✓ Reservado — liberar</button>`
+          ? `${g.release_requested
+              ? `<span class="cbtn" style="background:#FAEEDA;border-color:#EF9F27;color:#633806;cursor:default;">Solicitud pendiente...</span>`
+              : `<button class="cbtn unclaim-btn" onclick="requestRelease(${g.id})">✓ Reservado — liberar</button>`}`
           : `<button class="cbtn" onclick="openClaim(${g.id})">Quiero darlo</button>`}
       </div>
       ${g.claimed_by && isAdmin ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
@@ -498,10 +512,16 @@ function renderAdminList() {
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
             <div class="drag-handle" title="Arrastrar para reordenar" style="flex-shrink:0;cursor:grab;padding:4px 6px;color:var(--muted);font-size:16px;line-height:1;user-select:none;">⠿</div>
-            <span class="admin-item-name">${g.name}${g.claimed_by ? ' ✓' : ''}</span>
+            <div>
+              <span class="admin-item-name">${g.name}</span>
+              ${g.claimed_by ? `<div style="font-size:11px;color:#3b6d50;margin-top:2px;">Reservado por: ${g.claimed_by}${g.release_requested ? ' · <span style="color:#BA7517;">⚠ solicitud de liberación</span>' : ''}</div>` : ''}
+            </div>
             <button onclick="toggleEdit(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;">Editar</button>
             <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
-            ${g.claimed_by ? `<button onclick="unclaim(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid #f09595;border-radius:6px;background:transparent;cursor:pointer;color:#a32d2d;font-family:'Nunito',sans-serif;">Liberar reserva</button>` : ''}
+            ${g.claimed_by && g.release_requested ? `
+              <button onclick="acceptRelease(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid #639922;border-radius:6px;background:#EAF3DE;cursor:pointer;color:#27500A;font-family:'Nunito',sans-serif;">✓ Aceptar</button>
+              <button onclick="declineRelease(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid #f09595;border-radius:6px;background:transparent;cursor:pointer;color:#a32d2d;font-family:'Nunito',sans-serif;">✗ Declinar</button>
+            ` : g.claimed_by ? `<button onclick="unclaim(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid #f09595;border-radius:6px;background:transparent;cursor:pointer;color:#a32d2d;font-family:'Nunito',sans-serif;">Liberar reserva</button>` : ''}
           </div>
           <div id="edit-${g.id}" style="display:none;background:var(--sage-lt);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:4px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -649,11 +669,45 @@ async function confirmUnclaim() {
   const btn = document.getElementById('btn-unclaim-confirm');
   btn.disabled = true;
   btn.textContent = 'Liberando...';
-  const { error } = await db.from('gifts').update({ claimed_by: null }).eq('id', pendingId);
+  const { error } = await db.from('gifts').update({ claimed_by: null, release_requested: false }).eq('id', pendingId);
   btn.disabled = false;
   btn.textContent = 'Sí, liberar regalo';
   if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
   closeUnclaim();
+  await loadGifts();
+}
+
+async function requestRelease(id) {
+  const g = gifts.find(x => x.id === id);
+  document.getElementById('release-gift-name').textContent = g.name;
+  pendingId = id;
+  document.getElementById('releaseModal').classList.add('open');
+}
+
+async function confirmRequestRelease() {
+  const btn = document.getElementById('btn-release-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  const { error } = await db.from('gifts').update({ release_requested: true }).eq('id', pendingId);
+  btn.disabled = false;
+  btn.textContent = 'Sí, solicitar';
+  if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
+  closeReleaseModal();
+  await loadGifts();
+}
+
+function closeReleaseModal() {
+  document.getElementById('releaseModal').classList.remove('open');
+  pendingId = null;
+}
+
+async function acceptRelease(id) {
+  await db.from('gifts').update({ claimed_by: null, release_requested: false }).eq('id', id);
+  await loadGifts();
+}
+
+async function declineRelease(id) {
+  await db.from('gifts').update({ release_requested: false }).eq('id', id);
   await loadGifts();
 }
 
