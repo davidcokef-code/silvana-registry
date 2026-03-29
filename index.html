@@ -401,6 +401,7 @@
     </div>
     <div id="rsvp-list" style="font-size:13px;color:var(--muted);">Cargando...</div>
   </div>
+  </div>
 </div>
 
 <div id="grid" class="grid"><div class="loading">Cargando lista...</div></div>
@@ -473,6 +474,16 @@ const catLabel = { essential:'Esencial', hygiene:'Aseo', fun:'Juguetes', clothin
 
 let allRSVPs = [];
 let rsvpFilter = 'all';
+
+function copyLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.style.background = 'var(--pink-dk)';
+    btn.style.color = 'white';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = 'transparent'; btn.style.color = 'var(--pink-dk)'; }, 2000);
+  });
+}
 
 async function loadRSVPs() {
   const { data } = await db.from('rsvps').select('*').order('created_at', { ascending: false });
