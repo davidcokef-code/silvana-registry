@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lista de regalos — Silvana 🎀</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Baby shower — Silvana Coke 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Comfortaa:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --pink:     #e8a0b4;
-    --pink-lt:  #fdf0f4;
-    --pink-dk:  #b5607a;
-    --sage:     #a8c5b5;
-    --sage-lt:  #f0f5f2;
-    --cream:    #faf7f2;
-    --ink:      #2a2320;
-    --muted:    #8a7e7a;
-    --border:   rgba(42,35,32,0.1);
+    --pink:     #a8c5b5;
+    --pink-lt:  #f0f5f2;
+    --pink-dk:  #4a7c65;
+    --sage:     #c9ddd5;
+    --sage-lt:  #f4f8f6;
+    --cream:    #f7f9f7;
+    --ink:      #253028;
+    --muted:    #6b8070;
+    --border:   rgba(37,48,40,0.1);
     --radius:   16px;
-    --shadow:   0 2px 16px rgba(42,35,32,0.07);
+    --shadow:   0 2px 16px rgba(37,48,40,0.07);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     background: var(--cream);
     color: var(--ink);
     min-height: 100vh;
@@ -37,12 +37,12 @@
     position: relative;
   }
   .site-header h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(2rem, 6vw, 3.2rem);
+    font-family: 'Comfortaa', cursive;
+    font-size: clamp(1.7rem, 5vw, 2.8rem);
     color: var(--pink-dk);
-    line-height: 1.1;
+    line-height: 1.2;
   }
-  .site-header h1 em { font-style: italic; color: var(--ink); }
+  .site-header h1 em { font-style: normal; color: var(--ink); }
   .site-header p {
     font-size: 15px;
     color: var(--muted);
@@ -104,7 +104,7 @@
     color: var(--muted);
     cursor: pointer;
     transition: all .15s;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
   }
   .fbtn:hover { border-color: var(--pink); color: var(--pink-dk); }
   .fbtn.on { background: var(--pink-dk); color: white; border-color: var(--pink-dk); }
@@ -142,9 +142,9 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .b-essential { background: #EEEDFE; color: #3C3489; }
-  .b-comfort   { background: #E1F5EE; color: #085041; }
-  .b-fun       { background: #FAEEDA; color: #633806; }
+  .b-essential { background: #e8f4ef; color: #2d6a52; }
+  .b-comfort   { background: #e8f0ec; color: #3a5e4a; }
+  .b-fun       { background: #f0f4e8; color: #4a5e2d; }
   .b-clothing  { background: var(--pink-lt); color: var(--pink-dk); }
   .cdesc {
     font-size: 13px;
@@ -163,7 +163,7 @@
     background: transparent;
     cursor: pointer;
     color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     transition: all .15s;
   }
   .cbtn:hover { border-color: var(--pink); color: var(--pink-dk); }
@@ -184,7 +184,7 @@
   }
   .admin-panel.open { display: block; }
   .admin-panel h2 {
-    font-family: 'DM Serif Display', serif;
+    font-family: 'Comfortaa', cursive;
     font-size: 18px;
     color: var(--ink);
     margin-bottom: 1rem;
@@ -200,7 +200,7 @@
     border-radius: 10px;
     background: var(--cream);
     color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     outline: none;
     transition: border-color .15s;
   }
@@ -216,7 +216,7 @@
     border: none;
     border-radius: 10px;
     font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     cursor: pointer;
     margin-top: 4px;
     transition: opacity .15s;
@@ -242,7 +242,7 @@
     color: #a32d2d;
     cursor: pointer;
     flex-shrink: 0;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
   }
   .btn-del:hover { background: #FCEBEB; }
 
@@ -265,7 +265,7 @@
     width: 100%;
     max-width: 360px;
   }
-  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 6px; }
+  .modal h3 { font-family: 'Comfortaa', cursive; font-size: 18px; margin-bottom: 6px; }
   .modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; font-weight: 300; }
   .modal input {
     width: 100%;
@@ -275,7 +275,7 @@
     border-radius: 10px;
     background: var(--cream);
     color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     outline: none;
     margin-bottom: 12px;
   }
@@ -283,12 +283,12 @@
   .modal-btns { display: flex; gap: 10px; }
   .btn-cancel {
     flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 10px;
-    background: transparent; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    background: transparent; color: var(--muted); cursor: pointer; font-family: 'Nunito', sans-serif;
     font-size: 14px;
   }
   .btn-confirm {
     flex: 1; padding: 10px; border: none; border-radius: 10px;
-    background: var(--pink-dk); color: white; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    background: var(--pink-dk); color: white; cursor: pointer; font-family: 'Nunito', sans-serif;
     font-size: 14px; transition: opacity .15s;
   }
   .btn-confirm:hover { opacity: .85; }
@@ -305,8 +305,8 @@
 <body>
 
 <header class="site-header">
-  <h1>Lista de regalos<br><em>Silvana</em> 🎀</h1>
-  <p>Selecciona un regalo y ponle tu nombre para reservarlo.</p>
+  <h1>Bienvenidos al baby shower de<br><em>Silvana Coke</em> 🌿</h1>
+  <p>Selecciona un regalo y resérvalo a tu nombre.</p>
   <button class="admin-toggle" id="adminToggle" onclick="openAuthModal()">Admin</button>
 </header>
 
@@ -442,7 +442,7 @@ function renderGrid() {
           ? `<span class="cbtn taken">✓ Reservado</span>`
           : `<button class="cbtn" onclick="openClaim(${g.id})">Quiero darlo</button>`}
       </div>
-      ${g.claimed_by ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
+      ${g.claimed_by && isAdmin ? `<div class="claimed-by">Reservado por: ${g.claimed_by}</div>` : ''}
       ${g.link ? `<div style="margin-top:6px"><a href="${g.link}" target="_blank" style="font-size:12px;color:var(--pink-dk);text-decoration:none;">Ver referencia →</a></div>` : ''}
       ${isAdmin && !taken ? `<button class="btn-del" style="margin-top:8px;width:100%;" onclick="deleteGift(${g.id})">Eliminar</button>` : ''}
     </div>`;
