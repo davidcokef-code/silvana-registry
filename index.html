@@ -305,7 +305,7 @@
 <body>
 
 <header class="site-header">
-  <h1>Bienvenidos al baby shower de<br><em>Silvana Coke Garzón</em> 🌿</h1>
+  <h1>Bienvenidos al baby shower de<br><em>Silvana Coke</em> 🌿</h1>
   <p>Selecciona un regalo y resérvalo a tu nombre.</p>
   <button class="admin-toggle" id="adminToggle" onclick="openAuthModal()">Admin</button>
 </header>
@@ -452,11 +452,78 @@ function renderGrid() {
 function renderAdminList() {
   const el = document.getElementById('adminList');
   if (!gifts.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Regalos registrados (${gifts.length})</p>` +
-    gifts.map(g => `<div class="admin-item">
-      <span class="admin-item-name">${g.name} ${g.claimed_by ? '✓' : ''}</span>
-      <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
-    </div>`).join('');
+  el.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Regalos registrados (${gifts.length}) — haz clic en uno para editarlo</p>` +
+    gifts.map(g => `
+      <div class="admin-item" id="aitem-${g.id}">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span class="admin-item-name">${g.name}${g.claimed_by ? ' ✓' : ''}</span>
+            <button onclick="toggleEdit(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;">Editar</button>
+            <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
+            ${g.claimed_by ? `<button onclick="unclaim(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid #f09595;border-radius:6px;background:transparent;cursor:pointer;color:#a32d2d;font-family:'Nunito',sans-serif;">Liberar reserva</button>` : ''}
+          </div>
+          <div id="edit-${g.id}" style="display:none;background:var(--sage-lt);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:4px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div>
+                <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Nombre</label>
+                <input id="e-name-${g.id}" value="${(g.name||'').replace(/"/g,'&quot;')}" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Categoría</label>
+                <select id="e-cat-${g.id}" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;">
+                  <option value="essential" ${g.category==='essential'?'selected':''}>Esencial</option>
+                  <option value="comfort" ${g.category==='comfort'?'selected':''}>Confort</option>
+                  <option value="clothing" ${g.category==='clothing'?'selected':''}>Ropa</option>
+                  <option value="fun" ${g.category==='fun'?'selected':''}>Entretenimiento</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Descripción</label>
+              <textarea id="e-desc-${g.id}" rows="2" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;resize:vertical;">${g.description||''}</textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div>
+                <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Precio</label>
+                <input id="e-price-${g.id}" value="${(g.price_range||'').replace(/"/g,'&quot;')}" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Link del producto</label>
+                <input id="e-link-${g.id}" value="${(g.link||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;" />
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="saveEdit(${g.id})" style="flex:1;padding:7px;background:var(--pink-dk);color:white;border:none;border-radius:8px;font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;">Guardar cambios</button>
+              <button onclick="toggleEdit(${g.id})" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:transparent;font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;color:var(--muted);">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+}
+
+function toggleEdit(id) {
+  const el = document.getElementById(`edit-${id}`);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveEdit(id) {
+  const name = document.getElementById(`e-name-${id}`).value.trim();
+  if (!name) return;
+  const { error } = await db.from('gifts').update({
+    name,
+    category: document.getElementById(`e-cat-${id}`).value,
+    description: document.getElementById(`e-desc-${id}`).value.trim(),
+    price_range: document.getElementById(`e-price-${id}`).value.trim(),
+    link: document.getElementById(`e-link-${id}`).value.trim() || null,
+  }).eq('id', id);
+  if (error) { alert('Error al guardar: ' + error.message); return; }
+  await loadGifts();
+}
+
+async function unclaim(id) {
+  if (!confirm('¿Liberar esta reserva? El regalo volverá a estar disponible.')) return;
+  await db.from('gifts').update({ claimed_by: null }).eq('id', id);
+  await loadGifts();
 }
 
 function setFilter(cat, btn) {
