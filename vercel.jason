@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/rsvp/:slug", "destination": "/rsvp.html" }
-  ]
-}
