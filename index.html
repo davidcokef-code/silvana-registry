@@ -415,7 +415,7 @@ let isAdmin = false;
 const catLabel = { essential:'Esencial', comfort:'Confort', fun:'Entretenimiento', clothing:'Ropa' };
 
 async function loadGifts() {
-  const { data, error } = await db.from('gifts').select('*').order('created_at', { ascending: true });
+  const { data, error } = await db.from('gifts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
   if (error) { console.error(error); return; }
   gifts = data || [];
   renderGrid();
@@ -440,8 +440,8 @@ function renderGrid() {
   el.innerHTML = filtered.map(g => {
     const taken = !!g.claimed_by;
     return `<div class="card ${taken ? 'done' : ''}" id="card-${g.id}">
-      ${g.image_url ? `<div style="width:100%;height:160px;overflow:hidden;border-radius:10px;margin-bottom:10px;background:var(--sage-lt);">
-        <img src="${g.image_url}" alt="${g.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.display='none'" />
+      ${g.image_url ? `<div style="width:100%;height:180px;overflow:hidden;border-radius:10px;margin-bottom:12px;background:var(--sage-lt);display:flex;align-items:center;justify-content:center;">
+        <img src="${g.image_url}" alt="${g.name}" style="width:100%;height:100%;object-fit:contain;padding:8px;" onerror="this.parentElement.style.display='none'" />
       </div>` : ''}
       <div class="card-top">
         <div class="cname">${g.name}</div>
@@ -468,7 +468,11 @@ function renderAdminList() {
     gifts.map(g => `
       <div class="admin-item" id="aitem-${g.id}">
         <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+              <button onclick="moveGift(${g.id},'up')" title="Subir" style="font-size:11px;padding:2px 7px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;line-height:1;">↑</button>
+              <button onclick="moveGift(${g.id},'down')" title="Bajar" style="font-size:11px;padding:2px 7px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;line-height:1;">↓</button>
+            </div>
             <span class="admin-item-name">${g.name}${g.claimed_by ? ' ✓' : ''}</span>
             <button onclick="toggleEdit(${g.id})" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;">Editar</button>
             <button class="btn-del" onclick="deleteGift(${g.id})">Eliminar</button>
@@ -598,6 +602,22 @@ async function addGift() {
   btn.textContent = '+ Agregar regalo';
   if (error) { alert('Error al guardar: ' + error.message); return; }
   ['f-name','f-desc','f-price','f-link','f-image'].forEach(id => document.getElementById(id).value = '');
+  await loadGifts();
+}
+
+async function moveGift(id, direction) {
+  const idx = gifts.findIndex(g => g.id === id);
+  if (direction === 'up' && idx === 0) return;
+  if (direction === 'down' && idx === gifts.length - 1) return;
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  const a = gifts[idx];
+  const b = gifts[swapIdx];
+  const aOrder = a.sort_order ?? idx;
+  const bOrder = b.sort_order ?? swapIdx;
+  await Promise.all([
+    db.from('gifts').update({ sort_order: bOrder }).eq('id', a.id),
+    db.from('gifts').update({ sort_order: aOrder }).eq('id', b.id),
+  ]);
   await loadGifts();
 }
 
