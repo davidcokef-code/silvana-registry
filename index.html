@@ -153,7 +153,7 @@
     flex-shrink: 0;
   }
   .b-essential { background: #e8f4ef; color: #2d6a52; }
-  .b-comfort   { background: #e8f0ec; color: #3a5e4a; }
+  .b-hygiene   { background: #E6F1FB; color: #0C447C; }
   .b-fun       { background: #f0f4e8; color: #4a5e2d; }
   .b-clothing  { background: var(--pink-lt); color: var(--pink-dk); }
   .cdesc {
@@ -335,9 +335,9 @@
 <div class="filters" id="filters">
   <button class="fbtn on" onclick="setFilter('all',this)">Todos</button>
   <button class="fbtn" onclick="setFilter('essential',this)">Esencial</button>
-  <button class="fbtn" onclick="setFilter('comfort',this)">Confort</button>
+  <button class="fbtn" onclick="setFilter('hygiene',this)">Aseo</button>
   <button class="fbtn" onclick="setFilter('clothing',this)">Ropa</button>
-  <button class="fbtn" onclick="setFilter('fun',this)">Entretenimiento</button>
+  <button class="fbtn" onclick="setFilter('fun',this)">Juguetes</button>
   <button class="fbtn" onclick="setFilter('claimed',this)">✓ Reservados</button>
 </div>
 
@@ -353,9 +353,9 @@
       <label>Categoría *</label>
       <select id="f-cat">
         <option value="essential">Esencial</option>
-        <option value="comfort">Confort</option>
+        <option value="hygiene">Aseo</option>
         <option value="clothing">Ropa</option>
-        <option value="fun">Entretenimiento</option>
+        <option value="fun">Juguetes</option>
       </select>
     </div>
   </div>
@@ -452,7 +452,7 @@ let currentFilter = 'all';
 let pendingId = null;
 let isAdmin = false;
 
-const catLabel = { essential:'Esencial', comfort:'Confort', fun:'Entretenimiento', clothing:'Ropa' };
+const catLabel = { essential:'Esencial', hygiene:'Aseo', fun:'Juguetes', clothing:'Ropa' };
 
 async function loadGifts() {
   const { data, error } = await db.from('gifts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
@@ -533,9 +533,9 @@ function renderAdminList() {
                 <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Categoría</label>
                 <select id="e-cat-${g.id}" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-family:'Nunito',sans-serif;outline:none;">
                   <option value="essential" ${g.category==='essential'?'selected':''}>Esencial</option>
-                  <option value="comfort" ${g.category==='comfort'?'selected':''}>Confort</option>
+                  <option value="hygiene" ${g.category==='hygiene'?'selected':''}>Aseo</option>
                   <option value="clothing" ${g.category==='clothing'?'selected':''}>Ropa</option>
-                  <option value="fun" ${g.category==='fun'?'selected':''}>Entretenimiento</option>
+                  <option value="fun" ${g.category==='fun'?'selected':''}>Juguetes</option>
                 </select>
               </div>
             </div>
