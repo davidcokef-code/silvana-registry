@@ -576,7 +576,8 @@ async function confirmClaim() {
   if (error) { alert('Hubo un error. Intenta de nuevo.'); return; }
   closeModal();
   await loadGifts();
-  setFilter('claimed', document.querySelector('.fbtn[onclick="setFilter('claimed',this)"]'));
+  const claimedBtn = Array.from(document.querySelectorAll('.fbtn')).find(b => b.textContent.includes('Reservados'));
+  if (claimedBtn) setFilter('claimed', claimedBtn);
 }
 
 async function addGift() {
